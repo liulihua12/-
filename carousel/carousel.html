@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>carousel</title>
+    <style>
+        /* 去掉ul的圆点 */
+        ul,li{
+            list-style:none;
+            margin:0;
+            padding:0;
+        }
+        /* 设置轮播宽高 */
+        #banner{
+            width:1000px;
+            height:400px;
+            margin:50px auto;
+            overflow:hidden;
+            position:relative;
+        }
+        #ul-imgs{width:5000px;}
+        #ul-imgs.transition{
+            transition:0.5s;
+        }
+        #ul-imgs>li{float:left;}
+        /* 按钮 样式*/
+        #left,#right{
+            width:50px;
+            height:80px;
+            background-color:rgba(165, 168, 162, 0.3);
+            opacity:0.5;
+            text-align:center;
+            line-height:80px;
+            border-radius:8px;
+            position:absolute;
+            top:160px;
+        }
+        #left{left:20px;}
+        #right{left:930px;}
+        #banner>div:hover{background-color:rgba(165, 168, 162, 0.4);}
+        /* 圆点样式 */
+        #yuandian{
+            width:150px;
+            height:50px;
+            position:absolute;
+            top:320px;
+            left:425px;
+            display:flex;
+            justify-content:space-around;
+            align-items:center;
+        }
+        #yuandian>li{
+            width:15px;
+            height:15px;
+            border:1.5px solid #fff;
+            border-radius:50%;
+        }
+        #yuandian>li.active{background-color:rgb(180, 157, 197);}
+    </style>
+</head>
+<body>
+    <div id="banner">
+        <ul id="ul-imgs" class="transition">
+            <li><a href="javascript:;"><img src="./img/banner1.png" alt=""></a></li>
+            <li><a href="javascript:;"><img src="./img/banner2.png" alt=""></a></li>
+            <li><a href="javascript:;"><img src="./img/banner3.png" alt=""></a></li>
+            <li><a href="javascript:;"><img src="./img/banner4.png" alt=""></a></li>
+            <li><a href="javascript:;"><img src="./img/banner1.png" alt=""></a></li>
+        </ul>
+        <div id="left"><img src="./img/left.png" alt=""></div>
+        <div id="right"><img src="./img/right.png" alt=""></div>
+        <ul id="yuandian">
+            <li class="active"></li>
+            <li></li>
+            <li></li>
+            <li></li>
+        </ul>
+    </div>
+
+    <script>
+        (function(){
+
+        })()
+        //封装moveTo
+        var i=0;//现在正在显示第几张图片,从0开始
+        var LIWIDTH=1000;//每个li的固定宽度
+        var DURATION=500;//每次轮播动画持续的时间
+        var LICOUNT=4;//li的个数
+        //要移动的ul
+        var ulImgs=document.getElementById("ul-imgs");
+        //包含小圆点列表的ul
+        var yuanDian=document.getElementById("yuandian");
+        //小圆点的元素列表
+        var lis=yuanDian.children;
+
+        //从当前位置移动到任意一个范围内的位置
+        function moveTo(to){
+            //如果用户没有传入要调到第几张,就默认调到当前图的下一张
+            if(to==undefined){
+                to=i+1;
+            }
+            if(i==0){
+                if(to>i){//如果要看当前位置右边的图片,是不会出问题的
+                    ulImgs.className="transition";
+                }else{//只有i=0在开头.且还要看左边的图片时,才会出问题
+                //为了避免用户再次看到偷梁换柱的效果,先把transition class去掉
+                    ulImgs.className="";
+                    //将ulImgs拉取到最左侧
+                    ulImgs.style.marginLeft=-LIWIDTH*LICOUNT+"px";
+                    //定时器是为了将偷梁换柱操作和加回transition 强行隔离开
+                    setTimeout(()=>{
+                        moveTo(LICOUNT-1)
+                    },100);
+                    return;
+                }
+            }
+            i=to;//先将表示第几张图片的变量i变为目标位置
+            //再用i计算ulimgs的marginleft距离
+            ulImgs.style.marginLeft=-i*LIWIDTH+"px";
+            //先删除小圆点的Class
+            for(var li of lis){
+                li.className=""
+            }
+            //当i=4的时候已经到了最一张,去掉transition marginLeft=0
+            if(i==LICOUNT){
+                i=0;
+                //当transition动画播放完之后 去掉class 清除动画 marginLeft=0
+                setTimeout(()=>{
+                    ulImgs.className="";
+                    ulImgs.style.marginLeft=0;
+                },DURATION)
+            }
+            //再给当前小圆点添加active
+            lis[i].className="active";
+        }
+
+        //左右箭头操作方法
+        var left=document.getElementById("left");
+        var right=document.getElementById("right");
+        var canClick=true;//设置开关防止多次点击造成多个动画叠加的效果
+        //两个按钮共用的移动函数,n传入1时,移动到i+1位置,左移.n传入-1时,移动到i-1位置,右移
+        function move(n){
+            if(canClick){//只有可以点击时
+                moveTo(i+n);//才调用真正移动ul的方法
+                canClick=false;//马上把开关关上,禁止再次点击
+                //只有本地transition动画放完,才能自动打开开关,点击按钮才有反应.
+                setTimeout(()=>{
+                    canClick=true;
+                },DURATION+100)
+            }
+        }
+        left.addEventListener("click",()=>{//左按钮
+            move(-1)
+        })
+        right.onclick=()=>{//右按钮  ///两种事件效果一样///
+            move(1)
+        }
+
+        //轮播自动播放
+        var interval=3000;//每次轮播之间间隔3秒
+        var time=setInterval(()=>{
+            moveTo();
+        },interval)
+        //当鼠标移入时清除定时器
+        var banner=document.getElementById("banner");
+        banner.addEventListener("mouseover",()=>{
+            clearInterval(time);
+        })
+        //当鼠标移出时开启定时器
+        banner.addEventListener("mouseout",()=>{
+            time=setInterval(()=>{
+                moveTo();
+            },interval)
+        })
+
+        //小圆点按钮   利用冒泡将事件绑在ul上面  上面已经查找过yuandian
+        //开关上面也已经设置过了
+        yuandian.addEventListener("click",(e)=>{
+            if(canClick){//当可以点击时
+                var li=e.target;//目标圆点
+                if(li.nodeName=="LI"){//当前点击的是li 防止点出li外边
+                    if(li.className!=="active"){//判断点的不是当前li
+                        for(var i=0;i<lis.length;i++){
+                            if(lis[i]==li){//找到当前的li=?
+                                break;
+                            }
+                        }
+                        moveTo(i);//跳到当前的页面
+                        setTimeout(()=>{//等动画执行完打开开关
+                            canClick=true
+                        },DURATION)
+                    }
+                }
+            }
+        })
+    </script>
+</body>
+</html>
